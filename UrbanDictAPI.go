@@ -9,8 +9,15 @@ import (
 	"gopkg.in/xmlpath.v2"
 )
 
+//defining JSON structure to be returned
+type Details struct {
+	Meaning   string
+	Upcount   string
+	Downcount string
+}
+
 //FetchDef returns the results in an array
-func FetchDef(word string) []string {
+func FetchDef(word string) Details {
 	baseURL := "https://www.urbandictionary.com/define.php?term="
 
 	//http.Get returns a Response object and error if any
@@ -29,46 +36,51 @@ func FetchDef(word string) []string {
 
 	//xpaths defined and compiled
 	xpathMeaning := `//div[@class="meaning"]`
-	xpathUpCount := `//div[@class="count"]/a[@class="up"]`
-	xpathDownCount := `//div[@class="count"]/a[@class="down"]`
+	xpathUpCount := `//div[@class="thumbs"]/a[@class="up"]`
+	xpathDownCount := `//div[@class="thumbs"]/a[@class="down"]`
 
 	pathMeaning := xmlpath.MustCompile(xpathMeaning)
 	pathUpcount := xmlpath.MustCompile(xpathUpCount)
 	pathDowncount := xmlpath.MustCompile(xpathDownCount)
-
-	//defining JSON structure to be returned
-	type Details struct {
-		meaning   string
-		upcount   string
-		downcount string
-	}
-	var body []string
 
 	//iterated through all the nodes to get all meanings
 	iterMeaning := pathMeaning.Iter(xmlroot)
 	iterUpCount := pathUpcount.Iter(xmlroot)
 	iterDownCount := pathDowncount.Iter(xmlroot)
 
+	//Making an array of elements for Meanings, upcount and downcount
 	var meaning, upCount, downCount []string
 	for iterMeaning.Next() {
-		meaning = append(meaning, iterMeaning.Node().String()) 
+		meaning = append(meaning, iterMeaning.Node().String())
 	}
-	for	iterUpCount.Next(){
-		upCount = append(upCount, iterUpCount.Node().String()) 
+	for iterUpCount.Next() {
+		upCount = append(upCount, iterUpCount.Node().String())
 	}
-	
-	for	iterDownCount.Next(){
-		downCount = append(downCount, iterDownCount.Node().String()) 
-	}
-		
-	
-		data := Details{meaning, upCount, downCount}
-		b, err := json.Marshal(data)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(b)
-	}
-	return body
 
+	for iterDownCount.Next() {
+		downCount = append(downCount, iterDownCount.Node().String())
+	}
+
+	//iterating through the elements and making an array of it
+	var d []Details
+	for i := 0; i < len(meaning); i++ {
+		d = append(d, Details{meaning[i], upCount[i], downCount[i]})
+	}
+
+	//making a json object out of the array
+	data, err := json.Marshal(d)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//converting byte array in data variable to string array
+	var k []string
+	for _, i := range data {
+		k = append(k, string(i))
+	}
+
+	var t Details
+	h := json.Unmarshal(data, &t)
+	fmt.Println(h)
+	return t
 }
