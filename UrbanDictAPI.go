@@ -1,8 +1,6 @@
 package urbandict
 
 import (
-	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -17,7 +15,7 @@ type Details struct {
 }
 
 //FetchDef returns the results in an array
-func FetchDef(word string) Details {
+func FetchDef(word string) []Details {
 	baseURL := "https://www.urbandictionary.com/define.php?term="
 
 	//http.Get returns a Response object and error if any
@@ -66,21 +64,6 @@ func FetchDef(word string) Details {
 	for i := 0; i < len(meaning); i++ {
 		d = append(d, Details{meaning[i], upCount[i], downCount[i]})
 	}
+	return d
 
-	//making a json object out of the array
-	data, err := json.Marshal(d)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	//converting byte array in data variable to string array
-	var k []string
-	for _, i := range data {
-		k = append(k, string(i))
-	}
-
-	var t Details
-	h := json.Unmarshal(data, &t)
-	fmt.Println(h)
-	return t
 }
